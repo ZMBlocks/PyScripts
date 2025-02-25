@@ -53,24 +53,11 @@ def wait_with_animation(duration: float, title: str, sleep_time: float = 0.2, an
     print()
 
 def main() -> None:
-    if not os.path.exists(DiagnosticProgramPath):
-        print("诊断程序未安装")
-        if not os.path.exists("./RemoteTools.amd64ret.chs.exe"):
-            print("诊断程序安装包未找到 开始下载")
-            downloadProgram()
-        print("开始安装诊断程序")
-        result: subprocess.CompletedProcess[bytes] = subprocess.run(["RemoteTools.amd64ret.chs.exe", "/install", "/quiet", "/norestart", "/log", "install.log"])
-        if result.returncode != 0 or not os.path.exists(DiagnosticProgramPath):
-            print("安装失败")
-            os.system("start install.log")
-            quit()
-        print("安装完成")
-        os.remove("./RemoteTools.amd64ret.chs.exe")
-        for file in os.listdir():
-            if file.endswith(".log") and file.startswith("install"):
-                os.remove(file)
     servers: list[psutil.Process] = get_server_list()
-    if len(servers) == 0: return print("没有服务器正在运行")
+    if len(servers) == 0:
+        print("没有服务器正在运行")
+        input("-" * 50)
+        return main()
     for index, server in enumerate(servers):
         print(f"{index + 1}: (PID: {server.pid}) {server.exe()}")
     while True:
@@ -80,6 +67,11 @@ def main() -> None:
             server: psutil.Process = servers[index - 1]
             break
         except (ValueError, IndexError): pass
+    
+    if server.pid not in psutil.pids():
+        print("此服务器已关闭")
+        input("-" * 50)
+        return main()
     
     id: int = random.randint(1, 255)
     result = subprocess.run(
@@ -114,4 +106,24 @@ def main() -> None:
     quit()
     
 if __name__ == "__main__":
-    main()
+    if not os.path.exists(DiagnosticProgramPath):
+        print("诊断程序未安装")
+        if not os.path.exists("./RemoteTools.amd64ret.chs.exe"):
+            print("诊断程序安装包未找到 开始下载")
+            downloadProgram()
+        print("开始安装诊断程序")
+        result: subprocess.CompletedProcess[bytes] = subprocess.run(["RemoteTools.amd64ret.chs.exe", "/install", "/quiet", "/norestart", "/log", "install.log"])
+        if result.returncode != 0 or not os.path.exists(DiagnosticProgramPath):
+            print("安装失败")
+            os.system("start install.log")
+            quit()
+        print("安装完成")
+        os.remove("./RemoteTools.amd64ret.chs.exe")
+        for file in os.listdir():
+            if file.endswith(".log") and file.startswith("install"):
+                os.remove(file)
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n程序已退出")
+        quit()
